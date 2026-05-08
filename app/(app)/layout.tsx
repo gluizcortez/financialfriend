@@ -23,6 +23,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Fallback: trigger might have failed — create default workspace inline
   if (!workspaces.length) {
     const db = createServiceClient()
+    // Ensure profile row exists (may be missing after data reset or if trigger failed)
+    await db.from('profiles').upsert(
+      { id: user.id, full_name: user.user_metadata?.full_name ?? null },
+      { onConflict: 'id', ignoreDuplicates: true }
+    )
     const { data: household } = await db
       .from('households')
       .insert({ name: 'Meu Espaço', created_by: user.id })

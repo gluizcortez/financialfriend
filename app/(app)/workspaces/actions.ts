@@ -17,6 +17,11 @@ export async function createWorkspaceAction(name: string): Promise<{ error: stri
   if (!user) return { error: 'Não autorizado' }
   try {
     const service = createServiceClient()
+    // Ensure profile exists — required by households.created_by FK
+    await service.from('profiles').upsert(
+      { id: user.id, full_name: user.user_metadata?.full_name ?? null },
+      { onConflict: 'id', ignoreDuplicates: true }
+    )
     await createUserWorkspace(service, name.trim() || 'Novo Workspace', user.id)
     return { error: null }
   } catch (e: unknown) {
