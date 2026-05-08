@@ -276,7 +276,6 @@ function CategoryManager({ householdId, categories }: { householdId: string; cat
   const { addNotification } = useUIStore()
   const [adding, setAdding] = useState(false)
   const [newName, setNewName] = useState('')
-  const [newType, setNewType] = useState<'bill' | 'investment' | 'both'>('bill')
   const [newColor, setNewColor] = useState(WORKSPACE_COLORS[0])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
@@ -300,7 +299,7 @@ function CategoryManager({ householdId, categories }: { householdId: string; cat
       household_id: householdId,
       name: newName.trim(),
       color: newColor,
-      type: newType,
+      type: 'bill',
       is_default: false,
       sort_order: categories.length,
     })
@@ -317,8 +316,6 @@ function CategoryManager({ householdId, categories }: { householdId: string; cat
     queryClient.invalidateQueries({ queryKey: ['categories'] })
     addNotification('Categoria removida', 'success')
   }
-
-  const typeLabels: Record<string, string> = { bill: 'Conta', investment: 'Investimento', both: 'Ambos' }
 
   return (
     <div className="space-y-2">
@@ -345,7 +342,9 @@ function CategoryManager({ householdId, categories }: { householdId: string; cat
           <div key={cat.id} className="flex items-center gap-3 rounded-lg bg-gray-50 px-3 py-2 group">
             <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
             <span className="flex-1 text-sm text-gray-800">{cat.name}</span>
-            <span className="text-xs text-gray-400">{typeLabels[cat.type]}</span>
+            {cat.isDefault && (
+              <span className="text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-0.5">padrão</span>
+            )}
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button onClick={() => startEdit(cat)} className="text-gray-400 hover:text-primary-600 transition-colors">
                 <Pencil size={13} />
@@ -362,25 +361,14 @@ function CategoryManager({ householdId, categories }: { householdId: string; cat
 
       {adding ? (
         <form onSubmit={handleAdd} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 space-y-2 mt-2">
-          <div className="flex gap-2">
-            <input
-              autoFocus
-              type="text"
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              placeholder="Nome da categoria"
-              className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            <select
-              value={newType}
-              onChange={e => setNewType(e.target.value as typeof newType)}
-              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-            >
-              <option value="bill">Conta</option>
-              <option value="investment">Investimento</option>
-              <option value="both">Ambos</option>
-            </select>
-          </div>
+          <input
+            autoFocus
+            type="text"
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            placeholder="Nome da categoria"
+            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
           <ColorPicker value={newColor} onChange={setNewColor} />
           <div className="flex gap-2">
             <button type="submit" className="text-sm bg-primary-600 text-white rounded-lg px-3 py-1.5 hover:bg-primary-700 transition-colors">
