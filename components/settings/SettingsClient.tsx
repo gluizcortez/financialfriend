@@ -280,15 +280,22 @@ function CategoryManager({ householdId, categories }: { householdId: string; cat
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [editColor, setEditColor] = useState('')
+  const [confirmSaveId, setConfirmSaveId] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   function startEdit(cat: { id: string; name: string; color: string }) {
+    setConfirmDeleteId(null)
     setEditingId(cat.id); setEditName(cat.name); setEditColor(cat.color)
+  }
+
+  function cancelEdit() {
+    setEditingId(null); setConfirmSaveId(null)
   }
 
   async function handleSave(id: string) {
     await updateCategory(supabase, id, { name: editName.trim(), color: editColor })
     queryClient.invalidateQueries({ queryKey: ['categories'] })
-    setEditingId(null)
+    setEditingId(null); setConfirmSaveId(null)
     addNotification('Categoria atualizada', 'success')
   }
 
@@ -314,6 +321,7 @@ function CategoryManager({ householdId, categories }: { householdId: string; cat
     if (!fallback) { addNotification('Mantenha pelo menos uma categoria', 'error'); return }
     await deleteCategory(supabase, id, fallback.id)
     queryClient.invalidateQueries({ queryKey: ['categories'] })
+    setConfirmDeleteId(null)
     addNotification('Categoria removida', 'success')
   }
 
@@ -329,32 +337,86 @@ function CategoryManager({ householdId, categories }: { householdId: string; cat
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             <ColorPicker value={editColor} onChange={setEditColor} />
-            <div className="flex gap-2">
-              <button onClick={() => handleSave(cat.id)} className="flex items-center gap-1 text-xs bg-primary-600 text-white rounded-lg px-3 py-1.5 hover:bg-primary-700">
-                <Check size={12} /> Salvar
-              </button>
-              <button onClick={() => setEditingId(null)} className="flex items-center gap-1 text-xs text-gray-500 px-2">
-                <X size={12} /> Cancelar
-              </button>
-            </div>
+
+            {confirmSaveId === cat.id ? (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5">
+                <p className="text-xs font-medium text-amber-800 mb-2">Confirmar alteração?</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleSave(cat.id)}
+                    className="flex items-center gap-1 text-xs bg-primary-600 text-white rounded-lg px-3 py-1.5 hover:bg-primary-700 transition-colors"
+                  >
+                    <Check size={12} /> Confirmar
+                  </button>
+                  <button
+                    onClick={() => setConfirmSaveId(null)}
+                    className="text-xs text-gray-500 px-2 hover:text-gray-700 transition-colors"
+                  >
+                    Voltar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmSaveId(cat.id)}
+                  className="flex items-center gap-1 text-xs bg-primary-600 text-white rounded-lg px-3 py-1.5 hover:bg-primary-700 transition-colors"
+                >
+                  <Check size={12} /> Salvar
+                </button>
+                <button onClick={cancelEdit} className="flex items-center gap-1 text-xs text-gray-500 px-2 hover:text-gray-700 transition-colors">
+                  <X size={12} /> Cancelar
+                </button>
+              </div>
+            )}
           </div>
         ) : (
-          <div key={cat.id} className="flex items-center gap-3 rounded-lg bg-gray-50 px-3 py-2 group">
-            <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-            <span className="flex-1 text-sm text-gray-800">{cat.name}</span>
-            {cat.isDefault && (
-              <span className="text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-0.5">padrão</span>
-            )}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => startEdit(cat)} className="text-gray-400 hover:text-primary-600 transition-colors">
-                <Pencil size={13} />
-              </button>
-              {!cat.isDefault && (
-                <button onClick={() => handleDelete(cat.id)} className="text-gray-400 hover:text-red-500 transition-colors">
-                  <Trash2 size={13} />
-                </button>
+          <div key={cat.id} className="rounded-lg bg-gray-50 px-3 py-2">
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+              <span className="flex-1 text-sm text-gray-800">{cat.name}</span>
+              {cat.isDefault && (
+                <span className="text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-0.5">padrão</span>
               )}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => startEdit(cat)}
+                  className="flex items-center gap-1 text-xs text-gray-500 border border-gray-200 rounded-lg px-2 py-1 hover:border-primary-300 hover:text-primary-600 transition-colors"
+                >
+                  <Pencil size={12} /> Editar
+                </button>
+                {!cat.isDefault && (
+                  <button
+                    onClick={() => { setConfirmDeleteId(cat.id); setEditingId(null) }}
+                    className="flex items-center gap-1 text-xs text-gray-500 border border-gray-200 rounded-lg px-2 py-1 hover:border-red-300 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 size={12} /> Excluir
+                  </button>
+                )}
+              </div>
             </div>
+
+            {confirmDeleteId === cat.id && (
+              <div className="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5">
+                <p className="text-xs font-medium text-red-800 mb-2">
+                  Excluir &quot;{cat.name}&quot;? Contas vinculadas serão movidas para outra categoria.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleDelete(cat.id)}
+                    className="flex items-center gap-1 text-xs bg-red-600 text-white rounded-lg px-3 py-1.5 hover:bg-red-700 transition-colors"
+                  >
+                    <Trash2 size={12} /> Confirmar exclusão
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteId(null)}
+                    className="text-xs text-gray-500 px-2 hover:text-gray-700 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )
       ))}
