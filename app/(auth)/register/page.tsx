@@ -59,8 +59,8 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
-          <div className="flex justify-center mb-8">
-            <FinancialFriendLogo size={72} />
+          <div className="flex justify-center mb-10">
+            <FinancialFriendLogo size={100} showText={false} />
           </div>
 
           {pendingConfirmation ? (

@@ -222,3 +222,11 @@ export async function getUnreadNotificationCount(client: Client, userId: string)
   if (error) return 0
   return count ?? 0
 }
+
+export async function deleteNotification(client: Client, notificationId: string): Promise<void> {
+  await client.from('notifications').delete().eq('id', notificationId)
+}
+
+export async function deleteAllNotifications(client: Client, userId: string): Promise<void> {
+  await client.from('notifications').delete().eq('user_id', userId)
+}

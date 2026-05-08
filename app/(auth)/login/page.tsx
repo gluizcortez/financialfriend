@@ -36,13 +36,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
-          <div className="flex justify-center mb-8">
-            <FinancialFriendLogo size={72} />
+          <div className="flex justify-center mb-10">
+            <FinancialFriendLogo size={100} showText={false} />
           </div>
-
-          <h1 className="text-xl font-semibold text-gray-900 text-center mb-6">
-            Entrar na sua conta
-          </h1>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>

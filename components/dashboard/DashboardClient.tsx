@@ -33,12 +33,13 @@ export function DashboardClient() {
   const selectedWorkspaceIds = selectedIds ?? allIds
 
   function toggleWorkspace(id: string) {
-    const current = selectedIds ?? allIds
-    if (current.includes(id)) {
-      const next = current.filter(x => x !== id)
-      setSelectedIds(next.length === allIds.length ? null : next.length > 0 ? next : current)
+    if (selectedIds === null) {
+      setSelectedIds([id])
+    } else if (selectedIds.includes(id)) {
+      const next = selectedIds.filter(x => x !== id)
+      setSelectedIds(next.length === 0 ? null : next)
     } else {
-      const next = [...current, id]
+      const next = [...selectedIds, id]
       setSelectedIds(next.length === allIds.length ? null : next)
     }
   }
@@ -213,20 +214,31 @@ export function DashboardClient() {
 
       {/* Multi-workspace filter — only shown when user has 2+ workspaces */}
       {workspaces.length > 1 && (
-        <div className="flex items-center gap-3 mb-6 flex-wrap">
-          <span className="text-xs font-medium text-gray-500">Workspaces:</span>
+        <div className="flex items-center gap-2 mb-6 flex-wrap">
+          <button
+            onClick={() => setSelectedIds(null)}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all ${
+              selectedIds === null
+                ? 'bg-primary-600 border-primary-600 text-white shadow-sm'
+                : 'bg-white border-gray-200 text-gray-500 hover:border-primary-300 hover:text-primary-600'
+            }`}
+          >
+            Todos
+          </button>
           {workspaces.map(ws => {
-            const active = selectedIds === null || (selectedIds ?? allIds).includes(ws.id)
+            const isActive = selectedIds !== null && selectedIds.includes(ws.id)
             return (
-              <label key={ws.id} className="flex items-center gap-1.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={active}
-                  onChange={() => toggleWorkspace(ws.id)}
-                  className="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                />
-                <span className="text-xs text-gray-700">{ws.name}</span>
-              </label>
+              <button
+                key={ws.id}
+                onClick={() => toggleWorkspace(ws.id)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                  isActive
+                    ? 'bg-primary-600 border-primary-600 text-white shadow-sm'
+                    : 'bg-white border-gray-200 text-gray-500 hover:border-primary-300 hover:text-primary-600'
+                }`}
+              >
+                {ws.name}
+              </button>
             )
           })}
         </div>

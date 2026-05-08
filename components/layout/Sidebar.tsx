@@ -38,8 +38,8 @@ export function Sidebar({ userId }: Props) {
       }`}
     >
       {/* Logo */}
-      <div className={`flex items-center h-14 px-3 border-b border-gray-100 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-        <FinancialFriendLogo size={36} showText={false} />
+      <div className="flex items-center justify-center h-16 border-b border-gray-100">
+        <FinancialFriendLogo size={44} showText={false} />
       </div>
 
       {/* Nav */}
