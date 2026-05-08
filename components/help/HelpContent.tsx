@@ -10,8 +10,52 @@ export function HelpContent() {
           líquido, tudo de forma centralizada e segura.
         </p>
         <p className="mt-2">
-          Você pode acessar o FinancialFriend de qualquer dispositivo com navegador. Seus dados ficam
-          armazenados de forma segura no servidor — não há necessidade de instalar nada.
+          Você pode acessar de qualquer dispositivo com navegador. Seus dados ficam armazenados de
+          forma segura no servidor — não há necessidade de instalar nada.
+        </p>
+      </Section>
+
+      <Section title="Workspaces">
+        <p>
+          Workspaces são espaços financeiros independentes. Ao criar sua conta, um workspace
+          chamado <strong>&quot;Meu Espaço&quot;</strong> é criado automaticamente para você.
+        </p>
+        <p className="mt-2">Você pode criar e gerenciar workspaces na página <strong>Workspaces</strong> (menu lateral):</p>
+        <ul className="list-disc list-inside mt-2 space-y-1 text-gray-700">
+          <li>Crie múltiplos workspaces — ex: &quot;Pessoal&quot;, &quot;Casa&quot;, &quot;Empresa&quot;</li>
+          <li>Cada workspace tem seus próprios dados: contas, investimentos, FGTS, receitas e metas</li>
+          <li>Renomeie ou exclua workspaces dos quais você é dono</li>
+          <li>Convide outras pessoas por e-mail para participar de um workspace</li>
+        </ul>
+        <p className="mt-2">
+          Para trocar de workspace, use o seletor no topo de cada tela ou acesse a página
+          <strong> Workspaces</strong> no menu.
+        </p>
+      </Section>
+
+      <Section title="Convites e Notificações">
+        <p>
+          Para convidar alguém para um workspace, acesse <strong>Workspaces</strong> no menu lateral,
+          escolha o workspace desejado e informe o e-mail da pessoa. O convidado receberá uma
+          notificação assim que fizer login.
+        </p>
+        <p className="mt-2">
+          O <strong>sino de notificações</strong> no menu lateral exibe um badge quando há convites
+          pendentes. Ao clicar, você pode aceitar ou recusar convites recebidos. Notificações
+          são removidas automaticamente após a interação, ou você pode limpá-las todas de uma vez
+          usando o ícone de lixeira no painel de notificações.
+        </p>
+      </Section>
+
+      <Section title="Dashboard">
+        <p>
+          O dashboard exibe uma visão consolidada das suas finanças. Alterne entre a
+          visão <strong>Mensal</strong> e <strong>Anual</strong> usando os botões no topo.
+        </p>
+        <p className="mt-2">
+          Quando você tem dois ou mais workspaces, aparece um filtro de pills no topo do dashboard
+          para selecionar quais workspaces incluir nos gráficos e totais. Por padrão, <strong>Todos</strong> os
+          workspaces são exibidos juntos.
         </p>
       </Section>
 
@@ -24,23 +68,26 @@ export function HelpContent() {
           <li>Adicionar anexos (comprovantes, boletos)</li>
           <li>Navegar por qualquer mês anterior ou futuro</li>
         </ul>
+        <p className="mt-2">
+          Os dados são separados por workspace — troque o workspace ativo no seletor do topo da tela.
+        </p>
+      </Section>
+
+      <Section title="Receitas">
+        <p>
+          Registre todas as suas entradas financeiras por mês. Marque como recorrente para que a
+          receita apareça automaticamente nos meses seguintes. Os dados são separados por workspace.
+        </p>
       </Section>
 
       <Section title="Investimentos">
-        <p>Controle toda sua carteira de investimentos:</p>
+        <p>Controle toda sua carteira de investimentos por workspace:</p>
         <ul className="list-disc list-inside mt-2 space-y-1 text-gray-700">
           <li>Registre aportes, resgates e rendimentos</li>
-          <li>O saldo é calculado automaticamente</li>
+          <li>O saldo é calculado automaticamente a partir das transações</li>
           <li>Veja a evolução do patrimônio ao longo do tempo</li>
           <li>Suporte a renda fixa, ações, fundos, criptomoedas e outros</li>
         </ul>
-      </Section>
-
-      <Section title="FGTS">
-        <p>
-          Registre o saldo do FGTS mês a mês por workspace. O valor mais recente é usado no
-          cálculo do patrimônio total.
-        </p>
       </Section>
 
       <Section title="Metas">
@@ -52,33 +99,30 @@ export function HelpContent() {
         </ul>
       </Section>
 
-      <Section title="Receitas">
+      <Section title="FGTS">
         <p>
-          Registre todas as suas entradas financeiras por mês. Marque como recorrente para que a
-          receita apareça automaticamente nos meses seguintes.
+          Registre o saldo do FGTS mês a mês. O valor mais recente de cada workspace é somado
+          automaticamente no cálculo do patrimônio total.
         </p>
       </Section>
 
       <Section title="Patrimônio">
         <p>
-          A seção <strong>Patrimônio</strong> consolida seus investimentos e FGTS em uma visão
-          única. Crie múltiplas abas para organizar diferentes perspectivas (ex: curto prazo, longo
-          prazo).
+          A seção <strong>Patrimônio</strong> consolida todos os seus investimentos e o saldo
+          mais recente do FGTS do workspace ativo em uma visão única, exibindo o total acumulado.
         </p>
       </Section>
 
-      <Section title="Workspaces">
-        <p>
-          Workspaces organizam seus dados por contexto. Por exemplo, você pode ter um workspace
-          &quot;Pessoal&quot; e outro &quot;Empresa&quot; para contas separadas.
-          Vá em <strong>Configurações</strong> para criar e gerenciar workspaces.
-        </p>
-      </Section>
-
-      <Section title="Compartilhamento">
-        <p>
-          Seu espaço financeiro pode ser compartilhado com outras pessoas. Entre em contato pelo
-          e-mail de suporte para receber um convite de acesso ao mesmo household.
+      <Section title="Configurações">
+        <p>Em <strong>Configurações</strong> você pode:</p>
+        <ul className="list-disc list-inside mt-2 space-y-1 text-gray-700">
+          <li>Criar e gerenciar categorias de despesas e investimentos</li>
+          <li>Adicionar campos personalizados para suas contas</li>
+          <li>Ver os membros do workspace ativo</li>
+        </ul>
+        <p className="mt-2">
+          Para criar, renomear ou excluir workspaces e enviar convites, acesse a
+          página <strong>Workspaces</strong> no menu lateral.
         </p>
       </Section>
     </div>
