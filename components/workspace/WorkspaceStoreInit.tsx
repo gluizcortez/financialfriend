@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { UserWorkspace } from '@/types/models'
 
@@ -11,7 +11,9 @@ interface Props {
 export function WorkspaceStoreInit({ workspaces }: Props) {
   const setWorkspaces = useWorkspaceStore(s => s.setWorkspaces)
 
-  useEffect(() => {
+  // useLayoutEffect fires synchronously before browser paint, eliminating
+  // the "Carregando workspace..." flash on first render.
+  useLayoutEffect(() => {
     setWorkspaces(workspaces)
   }, [workspaces, setWorkspaces])
 
