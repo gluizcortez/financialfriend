@@ -6,11 +6,11 @@ import { createClient } from '@/lib/supabase/client'
 import {
   getNotifications,
   markAllNotificationsRead,
-  acceptInvitation,
   declineInvitation,
+  getUserWorkspaces,
 } from '@/lib/supabase/queries/workspaces'
+import { acceptInvitationAction } from '@/app/(app)/workspaces/actions'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
-import { getUserWorkspaces } from '@/lib/supabase/queries/workspaces'
 import { X, Bell, Check } from 'lucide-react'
 
 interface Props {
@@ -36,7 +36,7 @@ export function NotificationsModal({ userId, onClose }: Props) {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleAccept(invitationId: string) {
-    await acceptInvitation(supabase, invitationId, userId)
+    await acceptInvitationAction(invitationId)
     refetch()
     // Refresh workspace list
     const workspaces = await getUserWorkspaces(supabase, userId)

@@ -12,15 +12,15 @@ import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão geral' },
-  { href: '/workspaces', label: 'Workspaces', icon: Layers, desc: 'Seus espaços' },
   { href: '/bills', label: 'Contas Mensais', icon: Receipt, desc: 'Despesas mensais' },
-  { href: '/investments', label: 'Investimentos', icon: TrendingUp, desc: 'Carteira' },
-  { href: '/fgts', label: 'FGTS', icon: Wallet, desc: 'Fundo de garantia' },
-  { href: '/goals', label: 'Metas', icon: Target, desc: 'Objetivos financeiros' },
   { href: '/income', label: 'Receitas', icon: DollarSign, desc: 'Entradas' },
+  { href: '/investments', label: 'Investimentos', icon: TrendingUp, desc: 'Carteira' },
+  { href: '/goals', label: 'Metas', icon: Target, desc: 'Objetivos financeiros' },
+  { href: '/fgts', label: 'FGTS', icon: Wallet, desc: 'Fundo de garantia' },
   { href: '/networth', label: 'Patrimônio', icon: PieChart, desc: 'Ativos totais' },
+  { href: '/workspaces', label: 'Workspaces', icon: Layers, desc: 'Seus espaços' },
   { href: '/settings', label: 'Configurações', icon: Settings, desc: 'Preferências' },
-  { href: '/help', label: 'Como Usar', icon: HelpCircle, desc: 'Ajuda' },
+  { href: '/help', label: 'Como Ajudar', icon: HelpCircle, desc: 'Ajuda' },
 ]
 
 interface Props {
@@ -39,11 +39,7 @@ export function Sidebar({ userId }: Props) {
     >
       {/* Logo */}
       <div className={`flex items-center h-14 px-3 border-b border-gray-100 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-        {sidebarCollapsed ? (
-          <FinancialFriendLogo size={28} showText={false} />
-        ) : (
-          <FinancialFriendLogo size={28} showText />
-        )}
+        <FinancialFriendLogo size={36} showText={false} />
       </div>
 
       {/* Nav */}

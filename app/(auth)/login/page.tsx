@@ -37,7 +37,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
           <div className="flex justify-center mb-8">
-            <FinancialFriendLogo size={48} showText />
+            <FinancialFriendLogo size={72} />
           </div>
 
           <h1 className="text-xl font-semibold text-gray-900 text-center mb-6">
