@@ -20,7 +20,7 @@ const NAV_ITEMS = [
   { href: '/networth', label: 'Patrimônio', icon: PieChart, desc: 'Ativos totais' },
   { href: '/workspaces', label: 'Workspaces', icon: Layers, desc: 'Seus espaços' },
   { href: '/settings', label: 'Configurações', icon: Settings, desc: 'Preferências' },
-  { href: '/help', label: 'Como Ajudar', icon: HelpCircle, desc: 'Ajuda' },
+  { href: '/help', label: 'Como Usar', icon: HelpCircle, desc: 'Dicas e suporte' },
 ]
 
 interface Props {
