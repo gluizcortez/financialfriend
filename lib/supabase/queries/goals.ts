@@ -21,7 +21,6 @@ function mapContribution(row: Database['public']['Tables']['goal_contributions']
 
 function mapGoal(
   row: Database['public']['Tables']['goals']['Row'],
-  linkedWorkspaceIds: string[],
   linkedInvestmentIds: string[],
   contributions: GoalContribution[]
 ): Goal {
@@ -36,7 +35,6 @@ function mapGoal(
     customPeriodDays: row.custom_period_days,
     startDate: row.start_date,
     endDate: row.end_date,
-    linkedWorkspaceIds,
     linkedInvestmentIds,
     contributions,
     isActive: row.is_active,
@@ -57,15 +55,13 @@ export async function getGoals(client: Client, householdId: string): Promise<Goa
 
   const goalIds = goalRows.map(g => g.id)
 
-  const [{ data: linkedWs }, { data: linkedInvs }, { data: contribs }] = await Promise.all([
-    client.from('goal_linked_workspaces').select('*').in('goal_id', goalIds),
+  const [{ data: linkedInvs }, { data: contribs }] = await Promise.all([
     client.from('goal_linked_investments').select('*').in('goal_id', goalIds),
     client.from('goal_contributions').select('*').in('goal_id', goalIds).order('date'),
   ])
 
   return goalRows.map(row => mapGoal(
     row,
-    (linkedWs ?? []).filter(r => r.goal_id === row.id).map(r => r.workspace_id),
     (linkedInvs ?? []).filter(r => r.goal_id === row.id).map(r => r.investment_id),
     (contribs ?? []).filter(r => r.goal_id === row.id).map(mapContribution)
   ))
@@ -74,43 +70,27 @@ export async function getGoals(client: Client, householdId: string): Promise<Goa
 export async function createGoal(
   client: Client,
   goal: Omit<Database['public']['Tables']['goals']['Insert'], 'id'>,
-  linkedWorkspaceIds: string[],
   linkedInvestmentIds: string[]
 ): Promise<Goal> {
   const { data, error } = await client.from('goals').insert(goal).select().single()
   if (error || !data) throw new Error(error?.message)
 
-  if (linkedWorkspaceIds.length > 0) {
-    await client.from('goal_linked_workspaces').insert(
-      linkedWorkspaceIds.map(ws_id => ({ goal_id: data.id, workspace_id: ws_id }))
-    )
-  }
   if (linkedInvestmentIds.length > 0) {
     await client.from('goal_linked_investments').insert(
       linkedInvestmentIds.map(inv_id => ({ goal_id: data.id, investment_id: inv_id }))
     )
   }
 
-  return mapGoal(data, linkedWorkspaceIds, linkedInvestmentIds, [])
+  return mapGoal(data, linkedInvestmentIds, [])
 }
 
 export async function updateGoal(
   client: Client,
   id: string,
   updates: Database['public']['Tables']['goals']['Update'],
-  linkedWorkspaceIds?: string[],
   linkedInvestmentIds?: string[]
 ): Promise<void> {
   await client.from('goals').update(updates).eq('id', id)
-
-  if (linkedWorkspaceIds !== undefined) {
-    await client.from('goal_linked_workspaces').delete().eq('goal_id', id)
-    if (linkedWorkspaceIds.length > 0) {
-      await client.from('goal_linked_workspaces').insert(
-        linkedWorkspaceIds.map(ws_id => ({ goal_id: id, workspace_id: ws_id }))
-      )
-    }
-  }
 
   if (linkedInvestmentIds !== undefined) {
     await client.from('goal_linked_investments').delete().eq('goal_id', id)

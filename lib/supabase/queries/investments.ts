@@ -7,7 +7,6 @@ type Client = SupabaseClient<Database>
 function mapInvestment(row: Database['public']['Tables']['investments']['Row']): Investment {
   return {
     id: row.id,
-    workspaceId: row.workspace_id,
     householdId: row.household_id,
     name: row.name,
     type: row.type as InvestmentType,
@@ -23,7 +22,6 @@ function mapTransaction(row: Database['public']['Tables']['investment_transactio
   return {
     id: row.id,
     investmentId: row.investment_id,
-    workspaceId: row.workspace_id,
     householdId: row.household_id,
     type: row.type as TransactionType,
     amountCents: row.amount_cents,
@@ -35,11 +33,11 @@ function mapTransaction(row: Database['public']['Tables']['investment_transactio
   }
 }
 
-export async function getInvestments(client: Client, workspaceId: string): Promise<Investment[]> {
+export async function getInvestments(client: Client, householdId: string): Promise<Investment[]> {
   const { data, error } = await client
     .from('investments')
     .select('*')
-    .eq('workspace_id', workspaceId)
+    .eq('household_id', householdId)
     .order('name')
 
   if (error) throw new Error(error.message)
@@ -81,15 +79,15 @@ export async function getTransactions(client: Client, investmentId: string): Pro
   return (data ?? []).map(mapTransaction)
 }
 
-export async function getTransactionsByWorkspace(
+export async function getTransactionsByHousehold(
   client: Client,
-  workspaceId: string,
+  householdId: string,
   monthKey?: string
 ): Promise<InvestmentTransaction[]> {
   let query = client
     .from('investment_transactions')
     .select('*')
-    .eq('workspace_id', workspaceId)
+    .eq('household_id', householdId)
 
   if (monthKey) query = query.eq('month_key', monthKey)
 
@@ -106,10 +104,7 @@ export async function addTransaction(
   if (error || !data) throw new Error(error?.message)
 
   const created = mapTransaction(data)
-
-  // Recalculate balance from all transactions
   await recalculateBalance(client, created.investmentId)
-
   return created
 }
 

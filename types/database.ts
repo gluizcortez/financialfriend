@@ -173,7 +173,6 @@ export type Database = {
           notes: string
           updated_at: string
           value_cents: number
-          workspace_id: string
         }
         Insert: {
           category_id?: string | null
@@ -187,7 +186,6 @@ export type Database = {
           notes?: string
           updated_at?: string
           value_cents?: number
-          workspace_id: string
         }
         Update: {
           category_id?: string | null
@@ -201,7 +199,6 @@ export type Database = {
           notes?: string
           updated_at?: string
           value_cents?: number
-          workspace_id?: string
         }
         Relationships: [
           {
@@ -216,13 +213,6 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bills_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -325,7 +315,6 @@ export type Database = {
           month_key: string
           notes: string
           updated_at: string
-          workspace_id: string
         }
         Insert: {
           balance_cents?: number
@@ -336,7 +325,6 @@ export type Database = {
           month_key: string
           notes?: string
           updated_at?: string
-          workspace_id: string
         }
         Update: {
           balance_cents?: number
@@ -347,7 +335,6 @@ export type Database = {
           month_key?: string
           notes?: string
           updated_at?: string
-          workspace_id?: string
         }
         Relationships: [
           {
@@ -355,13 +342,6 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fgts_records_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -446,36 +426,6 @@ export type Database = {
             columns: ["investment_id"]
             isOneToOne: false
             referencedRelation: "investments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      goal_linked_workspaces: {
-        Row: {
-          goal_id: string
-          workspace_id: string
-        }
-        Insert: {
-          goal_id: string
-          workspace_id: string
-        }
-        Update: {
-          goal_id?: string
-          workspace_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "goal_linked_workspaces_goal_id_fkey"
-            columns: ["goal_id"]
-            isOneToOne: false
-            referencedRelation: "goals"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "goal_linked_workspaces_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -617,7 +567,6 @@ export type Database = {
           name: string
           notes: string
           updated_at: string
-          workspace_id: string
         }
         Insert: {
           amount_cents?: number
@@ -631,7 +580,6 @@ export type Database = {
           name: string
           notes?: string
           updated_at?: string
-          workspace_id: string
         }
         Update: {
           amount_cents?: number
@@ -645,7 +593,6 @@ export type Database = {
           name?: string
           notes?: string
           updated_at?: string
-          workspace_id?: string
         }
         Relationships: [
           {
@@ -653,13 +600,6 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "income_entries_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -676,7 +616,6 @@ export type Database = {
           notes: string
           type: string
           updated_at: string
-          workspace_id: string
         }
         Insert: {
           amount_cents: number
@@ -689,7 +628,6 @@ export type Database = {
           notes?: string
           type: string
           updated_at?: string
-          workspace_id: string
         }
         Update: {
           amount_cents?: number
@@ -702,7 +640,6 @@ export type Database = {
           notes?: string
           type?: string
           updated_at?: string
-          workspace_id?: string
         }
         Relationships: [
           {
@@ -719,13 +656,6 @@ export type Database = {
             referencedRelation: "investments"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "investment_transactions_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
-            referencedColumns: ["id"]
-          },
         ]
       }
       investments: {
@@ -739,7 +669,6 @@ export type Database = {
           notes: string
           type: string
           updated_at: string
-          workspace_id: string
         }
         Insert: {
           created_at?: string
@@ -751,7 +680,6 @@ export type Database = {
           notes?: string
           type: string
           updated_at?: string
-          workspace_id: string
         }
         Update: {
           created_at?: string
@@ -763,7 +691,6 @@ export type Database = {
           notes?: string
           type?: string
           updated_at?: string
-          workspace_id?: string
         }
         Relationships: [
           {
@@ -771,13 +698,6 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "investments_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -788,21 +708,18 @@ export type Database = {
           household_id: string
           id: string
           month_key: string
-          workspace_id: string
         }
         Insert: {
           created_at?: string
           household_id: string
           id?: string
           month_key: string
-          workspace_id: string
         }
         Update: {
           created_at?: string
           household_id?: string
           id?: string
           month_key?: string
-          workspace_id?: string
         }
         Relationships: [
           {
@@ -812,103 +729,52 @@ export type Database = {
             referencedRelation: "households"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "monthly_bill_records_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
-            referencedColumns: ["id"]
-          },
         ]
       }
-      net_worth_tab_fgts_workspaces: {
+      notifications: {
         Row: {
-          tab_id: string
-          workspace_id: string
-        }
-        Insert: {
-          tab_id: string
-          workspace_id: string
-        }
-        Update: {
-          tab_id?: string
-          workspace_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "net_worth_tab_fgts_workspaces_tab_id_fkey"
-            columns: ["tab_id"]
-            isOneToOne: false
-            referencedRelation: "net_worth_tabs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "net_worth_tab_fgts_workspaces_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      net_worth_tab_investment_workspaces: {
-        Row: {
-          tab_id: string
-          workspace_id: string
-        }
-        Insert: {
-          tab_id: string
-          workspace_id: string
-        }
-        Update: {
-          tab_id?: string
-          workspace_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "net_worth_tab_investment_workspaces_tab_id_fkey"
-            columns: ["tab_id"]
-            isOneToOne: false
-            referencedRelation: "net_worth_tabs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "net_worth_tab_investment_workspaces_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      net_worth_tabs: {
-        Row: {
+          body: string
           created_at: string
-          household_id: string
+          data: Json
+          household_id: string | null
           id: string
-          name: string
-          sort_order: number
-          updated_at: string
+          is_read: boolean
+          title: string
+          type: string
+          user_id: string
         }
         Insert: {
+          body: string
           created_at?: string
-          household_id: string
+          data?: Json
+          household_id?: string | null
           id?: string
-          name: string
-          sort_order?: number
-          updated_at?: string
+          is_read?: boolean
+          title: string
+          type: string
+          user_id: string
         }
         Update: {
+          body?: string
           created_at?: string
-          household_id?: string
+          data?: Json
+          household_id?: string | null
           id?: string
-          name?: string
-          sort_order?: number
-          updated_at?: string
+          is_read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "net_worth_tabs_household_id_fkey"
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_household_id_fkey"
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
@@ -964,46 +830,50 @@ export type Database = {
         }
         Relationships: []
       }
-      workspaces: {
+      workspace_invitations: {
         Row: {
-          color: string
           created_at: string
+          expires_at: string
           household_id: string
-          icon: string | null
           id: string
-          name: string
-          sort_order: number
-          type: string
-          updated_at: string
+          invited_by: string
+          invited_email: string
+          status: string
+          token: string
         }
         Insert: {
-          color: string
           created_at?: string
+          expires_at?: string
           household_id: string
-          icon?: string | null
           id?: string
-          name: string
-          sort_order?: number
-          type: string
-          updated_at?: string
+          invited_by: string
+          invited_email: string
+          status?: string
+          token?: string
         }
         Update: {
-          color?: string
           created_at?: string
+          expires_at?: string
           household_id?: string
-          icon?: string | null
           id?: string
-          name?: string
-          sort_order?: number
-          type?: string
-          updated_at?: string
+          invited_by?: string
+          invited_email?: string
+          status?: string
+          token?: string
         }
         Relationships: [
           {
-            foreignKeyName: "workspaces_household_id_fkey"
+            foreignKeyName: "workspace_invitations_household_id_fkey"
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workspace_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1015,6 +885,7 @@ export type Database = {
     Functions: {
       is_household_member: { Args: { hid: string }; Returns: boolean }
       is_household_owner: { Args: { hid: string }; Returns: boolean }
+      create_pending_invite_notifications: { Args: { p_user_id: string; p_email: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

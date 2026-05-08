@@ -1,22 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
-import type { Workspace, Category, CustomField } from '@/types/models'
+import type { Category, CustomField } from '@/types/models'
 
 type Client = SupabaseClient<Database>
-
-function mapWorkspace(row: Database['public']['Tables']['workspaces']['Row']): Workspace {
-  return {
-    id: row.id,
-    householdId: row.household_id,
-    name: row.name,
-    type: row.type as Workspace['type'],
-    color: row.color,
-    icon: row.icon ?? undefined,
-    sortOrder: row.sort_order,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }
-}
 
 function mapCategory(row: Database['public']['Tables']['categories']['Row']): Category {
   return {
@@ -44,43 +30,6 @@ function mapCustomField(row: Database['public']['Tables']['custom_fields']['Row'
     appliesTo: row.applies_to as CustomField['appliesTo'],
     createdAt: row.created_at,
   }
-}
-
-// ── Workspaces ────────────────────────────────────────────
-
-export async function getWorkspaces(client: Client, householdId: string): Promise<Workspace[]> {
-  const { data, error } = await client
-    .from('workspaces')
-    .select('*')
-    .eq('household_id', householdId)
-    .order('sort_order')
-
-  if (error) throw new Error(error.message)
-  return (data ?? []).map(mapWorkspace)
-}
-
-export async function createWorkspace(
-  client: Client,
-  ws: Omit<Database['public']['Tables']['workspaces']['Insert'], 'id'>
-): Promise<Workspace> {
-  const { data, error } = await client.from('workspaces').insert(ws).select().single()
-  if (error || !data) throw new Error(error?.message)
-  return mapWorkspace(data)
-}
-
-export async function updateWorkspace(
-  client: Client,
-  id: string,
-  updates: Database['public']['Tables']['workspaces']['Update']
-): Promise<Workspace> {
-  const { data, error } = await client.from('workspaces').update(updates).eq('id', id).select().single()
-  if (error || !data) throw new Error(error?.message)
-  return mapWorkspace(data)
-}
-
-export async function deleteWorkspace(client: Client, id: string): Promise<void> {
-  const { error } = await client.from('workspaces').delete().eq('id', id)
-  if (error) throw new Error(error.message)
 }
 
 // ── Categories ────────────────────────────────────────────
@@ -120,7 +69,6 @@ export async function deleteCategory(
   id: string,
   fallbackCategoryId: string
 ): Promise<void> {
-  // Reassign bill_entries and bills to fallback before deleting
   await Promise.all([
     client.from('bill_entries').update({ category_id: fallbackCategoryId }).eq('category_id', id),
     client.from('bills').update({ category_id: fallbackCategoryId }).eq('category_id', id),
@@ -183,41 +131,6 @@ export async function getHouseholdMembers(
     role: m.role,
     joinedAt: m.joined_at,
   }))
-}
-
-export async function joinHousehold(
-  client: Client,
-  userId: string,
-  householdId: string
-): Promise<{ success: boolean; error?: string }> {
-  // Check household exists
-  const { data: household } = await client
-    .from('households')
-    .select('id')
-    .eq('id', householdId)
-    .single()
-
-  if (!household) return { success: false, error: 'Código inválido ou espaço não encontrado.' }
-
-  // Check not already a member
-  const { data: existing } = await client
-    .from('household_members')
-    .select('household_id')
-    .eq('user_id', userId)
-    .eq('household_id', householdId)
-    .single()
-
-  if (existing) return { success: false, error: 'Você já pertence a este espaço.' }
-
-  // Add as member
-  const { error } = await client.from('household_members').insert({
-    household_id: householdId,
-    user_id: userId,
-    role: 'member',
-  })
-
-  if (error) return { success: false, error: error.message }
-  return { success: true }
 }
 
 export async function removeMember(

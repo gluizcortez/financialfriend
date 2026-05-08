@@ -4,21 +4,50 @@
 export type EntityId = string
 export type MonthKey = string // "YYYY-MM"
 
-export interface Workspace {
+// ── Workspace (maps to `households` table) ───────────────────────────────
+
+export interface UserWorkspace {
   id: EntityId
-  householdId: EntityId
   name: string
-  type: 'bills' | 'investments' | 'fgts' | 'income'
-  color: string
-  icon?: string
-  sortOrder: number
+  createdBy: string
   createdAt: string
   updatedAt: string
 }
 
+export interface WorkspaceMember {
+  userId: string
+  fullName: string | null
+  role: string
+  joinedAt: string
+}
+
+export interface WorkspaceInvitation {
+  id: EntityId
+  householdId: EntityId
+  invitedEmail: string
+  invitedBy: string
+  status: 'pending' | 'accepted' | 'declined'
+  token: string
+  createdAt: string
+  expiresAt: string
+}
+
+export interface AppNotification {
+  id: EntityId
+  userId: string
+  type: 'workspace_invite'
+  title: string
+  body: string
+  data: Record<string, unknown>
+  isRead: boolean
+  householdId: EntityId | null
+  createdAt: string
+}
+
+// ── Bills ─────────────────────────────────────────────────────────────────
+
 export interface Bill {
   id: EntityId
-  workspaceId: EntityId
   householdId: EntityId
   name: string
   valueCents: number
@@ -64,12 +93,13 @@ export interface BillEntry {
 
 export interface MonthlyBillRecord {
   id: EntityId
-  workspaceId: EntityId
   householdId: EntityId
   monthKey: MonthKey
   entries?: BillEntry[]
   createdAt: string
 }
+
+// ── Investments ───────────────────────────────────────────────────────────
 
 export type InvestmentType = 'renda_fixa' | 'acoes' | 'fundo' | 'cripto' | 'outro'
 
@@ -83,7 +113,6 @@ export const INVESTMENT_TYPE_LABELS: Record<InvestmentType, string> = {
 
 export interface Investment {
   id: EntityId
-  workspaceId: EntityId
   householdId: EntityId
   name: string
   type: InvestmentType
@@ -99,7 +128,6 @@ export type TransactionType = 'contribution' | 'withdrawal' | 'yield'
 export interface InvestmentTransaction {
   id: EntityId
   investmentId: EntityId
-  workspaceId: EntityId
   householdId: EntityId
   type: TransactionType
   amountCents: number
@@ -111,9 +139,10 @@ export interface InvestmentTransaction {
   updatedAt: string
 }
 
+// ── FGTS ──────────────────────────────────────────────────────────────────
+
 export interface FGTSRecord {
   id: EntityId
-  workspaceId: EntityId
   householdId: EntityId
   monthKey: MonthKey
   balanceCents: number
@@ -122,6 +151,8 @@ export interface FGTSRecord {
   createdAt: string
   updatedAt: string
 }
+
+// ── Goals ─────────────────────────────────────────────────────────────────
 
 export type Periodicity = 'monthly' | 'quarterly' | 'semiannual' | 'yearly' | 'custom'
 
@@ -151,13 +182,14 @@ export interface Goal {
   customPeriodDays?: number | null
   startDate: string
   endDate?: string | null
-  linkedWorkspaceIds: EntityId[]
   linkedInvestmentIds: EntityId[]
   contributions?: GoalContribution[]
   isActive: boolean
   createdAt: string
   updatedAt: string
 }
+
+// ── Income ────────────────────────────────────────────────────────────────
 
 export type IncomeCategory = 'salary' | 'freelance' | 'investments' | 'bonus' | 'other'
 
@@ -171,7 +203,6 @@ export const INCOME_CATEGORY_LABELS: Record<IncomeCategory, string> = {
 
 export interface IncomeEntry {
   id: EntityId
-  workspaceId: EntityId
   householdId: EntityId
   monthKey: MonthKey
   name: string
@@ -184,16 +215,7 @@ export interface IncomeEntry {
   updatedAt: string
 }
 
-export interface NetWorthTab {
-  id: EntityId
-  householdId: EntityId
-  name: string
-  investmentWorkspaceIds: EntityId[]
-  fgtsWorkspaceIds: EntityId[]
-  sortOrder: number
-  createdAt: string
-  updatedAt: string
-}
+// ── Settings ──────────────────────────────────────────────────────────────
 
 export interface Category {
   id: EntityId

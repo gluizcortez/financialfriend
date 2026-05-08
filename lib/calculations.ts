@@ -117,12 +117,12 @@ export function calculateYearlyTotals(billRecords: MonthlyBillRecord[], year: nu
 
 export function calculateNetWorth(investments: Investment[], fgtsRecords: FGTSRecord[]): number {
   const investTotal = investments.reduce((sum, i) => sum + i.currentBalanceCents, 0)
-  const latestByWorkspace = new Map<string, FGTSRecord>()
+  const latestByHousehold = new Map<string, FGTSRecord>()
   for (const r of fgtsRecords) {
-    const existing = latestByWorkspace.get(r.workspaceId)
-    if (!existing || r.monthKey > existing.monthKey) latestByWorkspace.set(r.workspaceId, r)
+    const existing = latestByHousehold.get(r.householdId)
+    if (!existing || r.monthKey > existing.monthKey) latestByHousehold.set(r.householdId, r)
   }
-  const fgtsTotal = [...latestByWorkspace.values()].reduce((sum, r) => sum + r.balanceCents, 0)
+  const fgtsTotal = [...latestByHousehold.values()].reduce((sum, r) => sum + r.balanceCents, 0)
   return investTotal + fgtsTotal
 }
 
@@ -151,7 +151,6 @@ export function calculateGoalProjection(goal: Goal, investmentTransactions?: Inv
     const relevant = investmentTransactions.filter(tx => {
       if (tx.type !== 'contribution') return false
       if (goal.linkedInvestmentIds.length > 0) return goal.linkedInvestmentIds.includes(tx.investmentId)
-      if (goal.linkedWorkspaceIds.length > 0) return goal.linkedWorkspaceIds.includes(tx.workspaceId)
       return true
     })
     const monthMap = new Map<string, number>()

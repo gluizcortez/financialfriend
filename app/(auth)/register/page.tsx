@@ -33,7 +33,7 @@ export default function RegisterPage() {
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
       },
     })
 
@@ -50,8 +50,8 @@ export default function RegisterPage() {
       return
     }
 
-    // Session available = email confirmation disabled, go to onboarding
-    router.push('/onboarding')
+    // Session available = email confirmation disabled, go to dashboard
+    router.push('/dashboard')
     router.refresh()
   }
 

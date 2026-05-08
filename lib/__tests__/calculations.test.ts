@@ -37,7 +37,6 @@ function makeBill(overrides: Partial<BillEntry> = {}): BillEntry {
 function makeInvestment(overrides: Partial<Investment> = {}): Investment {
   return {
     id: 'inv1',
-    workspaceId: 'ws1',
     householdId: 'hh1',
     name: 'CDB',
     type: 'renda_fixa',
@@ -54,7 +53,6 @@ function makeTx(overrides: Partial<InvestmentTransaction> = {}): InvestmentTrans
   return {
     id: 'tx1',
     investmentId: 'inv1',
-    workspaceId: 'ws1',
     householdId: 'hh1',
     type: 'contribution',
     amountCents: 50000,
@@ -77,7 +75,6 @@ function makeGoal(overrides: Partial<Goal> = {}): Goal {
     targetAmountCents: 100000,
     periodicity: 'monthly',
     startDate: '2024-01-01',
-    linkedWorkspaceIds: [],
     linkedInvestmentIds: [],
     contributions: [],
     isActive: true,
@@ -106,7 +103,6 @@ function makeCategory(overrides: Partial<Category> = {}): Category {
 function makeFGTS(overrides: Partial<FGTSRecord> = {}): FGTSRecord {
   return {
     id: 'f1',
-    workspaceId: 'ws1',
     householdId: 'hh1',
     monthKey: '2024-01',
     balanceCents: 50000,
@@ -368,13 +364,13 @@ describe('calculateNetWorth', () => {
     expect(calculateNetWorth(investments, [])).toBe(150000)
   })
 
-  it('uses only the latest FGTS record per workspace', () => {
+  it('uses only the latest FGTS record per household', () => {
     const fgts: FGTSRecord[] = [
-      makeFGTS({ id: 'f1', workspaceId: 'ws1', monthKey: '2024-01', balanceCents: 40000 }),
-      makeFGTS({ id: 'f2', workspaceId: 'ws1', monthKey: '2024-06', balanceCents: 60000 }), // latest for ws1
-      makeFGTS({ id: 'f3', workspaceId: 'ws2', monthKey: '2024-03', balanceCents: 20000 }),
+      makeFGTS({ id: 'f1', householdId: 'hh1', monthKey: '2024-01', balanceCents: 40000 }),
+      makeFGTS({ id: 'f2', householdId: 'hh1', monthKey: '2024-06', balanceCents: 60000 }), // latest for hh1
+      makeFGTS({ id: 'f3', householdId: 'hh2', monthKey: '2024-03', balanceCents: 20000 }),
     ]
-    expect(calculateNetWorth([], fgts)).toBe(80000) // 60000 (ws1 latest) + 20000 (ws2)
+    expect(calculateNetWorth([], fgts)).toBe(80000) // 60000 (hh1 latest) + 20000 (hh2)
   })
 
   it('combines investments and FGTS', () => {

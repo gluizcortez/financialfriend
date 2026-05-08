@@ -8,7 +8,6 @@ type Client = SupabaseClient<Database>
 function mapEntry(row: Database['public']['Tables']['income_entries']['Row']): IncomeEntry {
   return {
     id: row.id,
-    workspaceId: row.workspace_id,
     householdId: row.household_id,
     monthKey: row.month_key,
     name: row.name,
@@ -22,11 +21,11 @@ function mapEntry(row: Database['public']['Tables']['income_entries']['Row']): I
   }
 }
 
-export async function getIncomeEntries(client: Client, workspaceId: string, monthKey: string): Promise<IncomeEntry[]> {
+export async function getIncomeEntries(client: Client, householdId: string, monthKey: string): Promise<IncomeEntry[]> {
   const { data, error } = await client
     .from('income_entries')
     .select('*')
-    .eq('workspace_id', workspaceId)
+    .eq('household_id', householdId)
     .eq('month_key', monthKey)
     .order('date')
 
@@ -34,11 +33,11 @@ export async function getIncomeEntries(client: Client, workspaceId: string, mont
   return (data ?? []).map(mapEntry)
 }
 
-export async function getAllIncomeEntries(client: Client, workspaceId: string): Promise<IncomeEntry[]> {
+export async function getAllIncomeEntries(client: Client, householdId: string): Promise<IncomeEntry[]> {
   const { data, error } = await client
     .from('income_entries')
     .select('*')
-    .eq('workspace_id', workspaceId)
+    .eq('household_id', householdId)
     .order('date')
 
   if (error) throw new Error(error.message)
@@ -71,21 +70,18 @@ export async function deleteIncomeEntry(client: Client, id: string): Promise<voi
 
 export async function generateRecurringForMonth(
   client: Client,
-  workspaceId: string,
   householdId: string,
   targetMonthKey: string
 ): Promise<number> {
-  // Find recurring entries from previous months
   const { data: recurringTemplates } = await client
     .from('income_entries')
     .select('*')
-    .eq('workspace_id', workspaceId)
+    .eq('household_id', householdId)
     .eq('is_recurring', true)
     .lt('month_key', targetMonthKey)
 
   if (!recurringTemplates?.length) return 0
 
-  // Deduplicate by name+category — keep latest
   const templateMap = new Map<string, typeof recurringTemplates[0]>()
   for (const t of recurringTemplates) {
     const key = `${t.name}::${t.category}`
@@ -93,11 +89,10 @@ export async function generateRecurringForMonth(
     if (!existing || t.month_key > existing.month_key) templateMap.set(key, t)
   }
 
-  // Check what already exists in target month
   const { data: existing } = await client
     .from('income_entries')
     .select('name, category')
-    .eq('workspace_id', workspaceId)
+    .eq('household_id', householdId)
     .eq('month_key', targetMonthKey)
 
   const existingKeys = new Set((existing ?? []).map(e => `${e.name}::${e.category}`))
@@ -114,7 +109,6 @@ export async function generateRecurringForMonth(
     const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
     await createIncomeEntry(client, {
-      workspace_id: workspaceId,
       household_id: householdId,
       month_key: targetMonthKey,
       name: template.name,

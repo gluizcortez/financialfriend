@@ -27,7 +27,6 @@ function mapBillEntry(row: Database['public']['Tables']['bill_entries']['Row']):
 function mapBill(row: Database['public']['Tables']['bills']['Row']): Bill {
   return {
     id: row.id,
-    workspaceId: row.workspace_id,
     householdId: row.household_id,
     name: row.name,
     valueCents: row.value_cents,
@@ -45,43 +44,41 @@ function mapBill(row: Database['public']['Tables']['bills']['Row']): Bill {
 
 export async function getOrCreateMonthRecord(
   client: Client,
-  workspaceId: string,
   householdId: string,
   monthKey: string
 ): Promise<MonthlyBillRecord> {
   const { data: existing } = await client
     .from('monthly_bill_records')
     .select('*')
-    .eq('workspace_id', workspaceId)
+    .eq('household_id', householdId)
     .eq('month_key', monthKey)
     .single()
 
   if (existing) {
     const entries = await getBillEntriesForRecord(client, existing.id)
-    return { id: existing.id, workspaceId, householdId, monthKey, entries, createdAt: existing.created_at }
+    return { id: existing.id, householdId, monthKey, entries, createdAt: existing.created_at }
   }
 
   const { data: created, error } = await client
     .from('monthly_bill_records')
-    .insert({ workspace_id: workspaceId, household_id: householdId, month_key: monthKey })
+    .insert({ household_id: householdId, month_key: monthKey })
     .select()
     .single()
 
   if (error || !created) throw new Error(`Failed to create month record: ${error?.message}`)
 
-  return { id: created.id, workspaceId, householdId, monthKey, entries: [], createdAt: created.created_at }
+  return { id: created.id, householdId, monthKey, entries: [], createdAt: created.created_at }
 }
 
 export async function getBillRecordsForYear(
   client: Client,
-  workspaceId: string,
   householdId: string,
   year: number
 ): Promise<MonthlyBillRecord[]> {
   const { data: records, error } = await client
     .from('monthly_bill_records')
     .select('*')
-    .eq('workspace_id', workspaceId)
+    .eq('household_id', householdId)
     .like('month_key', `${year}-%`)
     .order('month_key')
 
@@ -91,7 +88,7 @@ export async function getBillRecordsForYear(
   const results = await Promise.all(
     records.map(async (r) => {
       const entries = await getBillEntriesForRecord(client, r.id)
-      return { id: r.id, workspaceId, householdId, monthKey: r.month_key, entries, createdAt: r.created_at }
+      return { id: r.id, householdId, monthKey: r.month_key, entries, createdAt: r.created_at }
     })
   )
   return results
@@ -113,11 +110,11 @@ export async function getBillEntriesForRecord(
 
 // ── Bill Templates ────────────────────────────────────────
 
-export async function getBills(client: Client, workspaceId: string): Promise<Bill[]> {
+export async function getBills(client: Client, householdId: string): Promise<Bill[]> {
   const { data, error } = await client
     .from('bills')
     .select('*')
-    .eq('workspace_id', workspaceId)
+    .eq('household_id', householdId)
     .order('name')
 
   if (error) throw new Error(error.message)
@@ -190,17 +187,16 @@ export async function setBillEntryStatus(
 
 export async function generateMonthFromTemplates(
   client: Client,
-  workspaceId: string,
   householdId: string,
   monthKey: string
 ): Promise<BillEntry[]> {
-  const record = await getOrCreateMonthRecord(client, workspaceId, householdId, monthKey)
+  const record = await getOrCreateMonthRecord(client, householdId, monthKey)
 
   if (record.entries && record.entries.length > 0) {
     return record.entries
   }
 
-  const recurringBills = await getBills(client, workspaceId)
+  const recurringBills = await getBills(client, householdId)
   const templates = recurringBills.filter(b => b.isRecurring)
 
   if (templates.length === 0) return []

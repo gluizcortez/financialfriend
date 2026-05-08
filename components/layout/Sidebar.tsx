@@ -4,13 +4,15 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Receipt, TrendingUp, Target, Wallet,
-  DollarSign, PieChart, Settings, HelpCircle, ChevronLeft, ChevronRight,
+  DollarSign, PieChart, Settings, HelpCircle, ChevronLeft, ChevronRight, Layers,
 } from 'lucide-react'
 import { FinancialFriendLogo } from '@/components/logo/FinancialFriendLogo'
 import { useUIStore } from '@/stores/useUIStore'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão geral' },
+  { href: '/workspaces', label: 'Workspaces', icon: Layers, desc: 'Seus espaços' },
   { href: '/bills', label: 'Contas Mensais', icon: Receipt, desc: 'Despesas mensais' },
   { href: '/investments', label: 'Investimentos', icon: TrendingUp, desc: 'Carteira' },
   { href: '/fgts', label: 'FGTS', icon: Wallet, desc: 'Fundo de garantia' },
@@ -21,7 +23,11 @@ const NAV_ITEMS = [
   { href: '/help', label: 'Como Usar', icon: HelpCircle, desc: 'Ajuda' },
 ]
 
-export function Sidebar() {
+interface Props {
+  userId: string
+}
+
+export function Sidebar({ userId }: Props) {
   const pathname = usePathname()
   const { sidebarCollapsed, toggleSidebar } = useUIStore()
 
@@ -67,14 +73,17 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Collapse toggle */}
-      <button
-        onClick={toggleSidebar}
-        className="flex items-center justify-center h-10 w-10 mx-auto mb-3 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-        title={sidebarCollapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
-      >
-        {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-      </button>
+      {/* Notification bell + Collapse toggle */}
+      <div className={`flex ${sidebarCollapsed ? 'flex-col items-center' : 'items-center justify-between px-3'} mb-3 gap-1`}>
+        <NotificationBell userId={userId} collapsed={sidebarCollapsed} />
+        <button
+          onClick={toggleSidebar}
+          className="flex items-center justify-center h-9 w-9 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          title={sidebarCollapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+        >
+          {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
+      </div>
     </aside>
   )
 }

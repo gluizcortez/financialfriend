@@ -7,7 +7,6 @@ type Client = SupabaseClient<Database>
 function mapRecord(row: Database['public']['Tables']['fgts_records']['Row']): FGTSRecord {
   return {
     id: row.id,
-    workspaceId: row.workspace_id,
     householdId: row.household_id,
     monthKey: row.month_key,
     balanceCents: row.balance_cents,
@@ -18,11 +17,11 @@ function mapRecord(row: Database['public']['Tables']['fgts_records']['Row']): FG
   }
 }
 
-export async function getFGTSRecords(client: Client, workspaceId: string): Promise<FGTSRecord[]> {
+export async function getFGTSRecords(client: Client, householdId: string): Promise<FGTSRecord[]> {
   const { data, error } = await client
     .from('fgts_records')
     .select('*')
-    .eq('workspace_id', workspaceId)
+    .eq('household_id', householdId)
     .order('month_key', { ascending: false })
 
   if (error) throw new Error(error.message)
@@ -33,10 +32,9 @@ export async function upsertFGTSRecord(
   client: Client,
   record: Omit<Database['public']['Tables']['fgts_records']['Insert'], 'id'>
 ): Promise<FGTSRecord> {
-  // Use upsert to enforce one record per workspace+month
   const { data, error } = await client
     .from('fgts_records')
-    .upsert(record, { onConflict: 'workspace_id,month_key' })
+    .upsert(record, { onConflict: 'household_id,month_key' })
     .select()
     .single()
 

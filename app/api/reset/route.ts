@@ -15,7 +15,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Confirmação inválida' }, { status: 400 })
     }
 
-    // Authenticate with user client (respects auth)
     const userClient = await createClient()
     const { data: { user }, error: authError } = await userClient.auth.getUser()
 
@@ -23,7 +22,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    // Get the user's household
     const { data: membership } = await userClient
       .from('household_members')
       .select('household_id')
@@ -36,10 +34,9 @@ export async function POST(request: Request) {
 
     const householdId = membership.household_id
 
-    // Use service_role to perform the deletion (bypasses RLS for cascade)
     const admin = createServiceClient()
 
-    // Step 1: Delete all Storage files for this household
+    // Delete all Storage files for this household
     const { data: storageFiles } = await admin.storage
       .from('attachments')
       .list(householdId, { limit: 1000 })
@@ -49,7 +46,6 @@ export async function POST(request: Request) {
       await admin.storage.from('attachments').remove(paths)
     }
 
-    // Also remove nested paths (entity sub-folders)
     const { data: attachmentRows } = await admin
       .from('attachments')
       .select('storage_path')
@@ -57,20 +53,18 @@ export async function POST(request: Request) {
 
     if (attachmentRows?.length) {
       const storagePaths = attachmentRows.map(a => a.storage_path)
-      // Remove in batches of 100
       for (let i = 0; i < storagePaths.length; i += 100) {
         await admin.storage.from('attachments').remove(storagePaths.slice(i, i + 100))
       }
     }
 
-    // Step 2: Delete all household data (cascade deletes workspaces → bills → entries → etc.)
-    // Order matters for non-cascade FKs
-    // Join tables (goal_linked_*, net_worth_tab_*) cascade-delete with their parents
+    // Delete all household data in FK-safe order
     const tables = [
+      'notifications',
+      'workspace_invitations',
       'goal_contributions',
+      'goal_linked_investments',
       'goals',
-      'net_worth_tabs',
-      'attachments',
       'bill_entries',
       'monthly_bill_records',
       'bills',
@@ -78,16 +72,16 @@ export async function POST(request: Request) {
       'investments',
       'fgts_records',
       'income_entries',
-      'custom_fields',
+      'attachments',
       'categories',
-      'workspaces',
+      'custom_fields',
     ] as const
 
     for (const table of tables) {
-      await admin.from(table).delete().eq('household_id', householdId)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (admin.from(table) as any).delete().eq('household_id', householdId)
     }
 
-    // Step 3: Remove household members and the household itself
     await admin.from('household_members').delete().eq('household_id', householdId)
     await admin.from('households').delete().eq('id', householdId)
 

@@ -3,10 +3,10 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import { getWorkspaces, getCategories } from '@/lib/supabase/queries/settings'
+import { getCategories } from '@/lib/supabase/queries/settings'
 import { getOrCreateMonthRecord, getBillRecordsForYear } from '@/lib/supabase/queries/bills'
 import { getIncomeEntries, getAllIncomeEntries } from '@/lib/supabase/queries/income'
-import { getInvestments, getTransactionsByWorkspace } from '@/lib/supabase/queries/investments'
+import { getInvestments, getTransactionsByHousehold } from '@/lib/supabase/queries/investments'
 import { getFGTSRecords } from '@/lib/supabase/queries/fgts'
 import { getGoals } from '@/lib/supabase/queries/goals'
 import { calculateNetWorth } from '@/lib/calculations'
@@ -17,33 +17,39 @@ import { PortfolioPieChart } from './PortfolioPieChart'
 import { ExpenseTrendChart } from './ExpenseTrendChart'
 import { YearView } from './YearView'
 import { LayoutDashboard, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { BillEntry, MonthKey } from '@/types/models'
 
-interface Props { householdId: string }
-
-export function DashboardClient({ householdId }: Props) {
+export function DashboardClient() {
   const supabase = createClient()
+  const { workspaces, activeWorkspaceId } = useWorkspaceStore()
   const [monthKey, setMonthKey] = useState(getCurrentMonthKey())
   const [viewMode, setViewMode] = useState<'month' | 'year'>('month')
   const currentYear = new Date().getFullYear()
   const [year, setYear] = useState(currentYear)
+  const [selectedIds, setSelectedIds] = useState<string[] | null>(null)
 
-  const { data: workspaces = [] } = useQuery({
-    queryKey: ['workspaces', householdId],
-    queryFn: () => getWorkspaces(supabase, householdId),
-  })
+  const allIds = useMemo(() => workspaces.map(w => w.id), [workspaces])
+  const selectedWorkspaceIds = selectedIds ?? allIds
+
+  function toggleWorkspace(id: string) {
+    const current = selectedIds ?? allIds
+    if (current.includes(id)) {
+      const next = current.filter(x => x !== id)
+      setSelectedIds(next.length === allIds.length ? null : next.length > 0 ? next : current)
+    } else {
+      const next = [...current, id]
+      setSelectedIds(next.length === allIds.length ? null : next)
+    }
+  }
+
+  const householdId = activeWorkspaceId ?? allIds[0] ?? null
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories', householdId],
-    queryFn: () => getCategories(supabase, householdId),
+    queryFn: () => getCategories(supabase, householdId!),
+    enabled: !!householdId,
   })
-
-  const billsWorkspaceIds = workspaces.filter(w => w.type === 'bills').map(w => w.id)
-  const incomeWorkspaceIds = workspaces.filter(w => w.type === 'income').map(w => w.id)
-  const investmentWorkspaceIds = workspaces.filter(w => w.type === 'investments').map(w => w.id)
-  const fgtsWorkspaceIds = workspaces.filter(w => w.type === 'fgts').map(w => w.id)
-
-  // ── Month mode data ──────────────────────────────────────
 
   const last6Months = useMemo(() => {
     const months: MonthKey[] = []
@@ -53,14 +59,14 @@ export function DashboardClient({ householdId }: Props) {
   }, [monthKey])
 
   const { data: allMonthsData = [] } = useQuery({
-    queryKey: ['dashboard-bills-trend', householdId, last6Months[0]],
+    queryKey: ['dashboard-bills-trend', selectedWorkspaceIds.join(','), last6Months[0]],
     queryFn: async () => {
       const results = await Promise.all(
-        last6Months.flatMap(mk => billsWorkspaceIds.map(id => getOrCreateMonthRecord(supabase, id, householdId, mk)))
+        last6Months.flatMap(mk => selectedWorkspaceIds.map(id => getOrCreateMonthRecord(supabase, id, mk)))
       )
       return results
     },
-    enabled: viewMode === 'month' && billsWorkspaceIds.length > 0,
+    enabled: viewMode === 'month' && selectedWorkspaceIds.length > 0,
   })
 
   const allEntries = useMemo(() => {
@@ -77,72 +83,66 @@ export function DashboardClient({ householdId }: Props) {
   }, [allMonthsData])
 
   const { data: allIncome = [] } = useQuery({
-    queryKey: ['dashboard-income', householdId, monthKey],
+    queryKey: ['dashboard-income', selectedWorkspaceIds.join(','), monthKey],
     queryFn: async () => {
-      const results = await Promise.all(incomeWorkspaceIds.map(id => getIncomeEntries(supabase, id, monthKey)))
+      const results = await Promise.all(selectedWorkspaceIds.map(id => getIncomeEntries(supabase, id, monthKey)))
       return results.flat()
     },
-    enabled: viewMode === 'month' && incomeWorkspaceIds.length > 0,
+    enabled: viewMode === 'month' && selectedWorkspaceIds.length > 0,
   })
 
-  // ── Shared data (investments + FGTS always loaded) ───────
-
   const { data: allInvestments = [] } = useQuery({
-    queryKey: ['all-investments', householdId],
+    queryKey: ['all-investments', selectedWorkspaceIds.join(',')],
     queryFn: async () => {
-      const results = await Promise.all(investmentWorkspaceIds.map(id => getInvestments(supabase, id)))
+      const results = await Promise.all(selectedWorkspaceIds.map(id => getInvestments(supabase, id)))
       return results.flat()
     },
-    enabled: investmentWorkspaceIds.length > 0,
+    enabled: selectedWorkspaceIds.length > 0,
   })
 
   const { data: allFGTS = [] } = useQuery({
-    queryKey: ['all-fgts', householdId],
+    queryKey: ['all-fgts', selectedWorkspaceIds.join(',')],
     queryFn: async () => {
-      const results = await Promise.all(fgtsWorkspaceIds.map(id => getFGTSRecords(supabase, id)))
+      const results = await Promise.all(selectedWorkspaceIds.map(id => getFGTSRecords(supabase, id)))
       return results.flat()
     },
-    enabled: fgtsWorkspaceIds.length > 0,
+    enabled: selectedWorkspaceIds.length > 0,
   })
 
-  // ── Year mode data ────────────────────────────────────────
-
   const { data: yearBillRecords = [] } = useQuery({
-    queryKey: ['dashboard-year-bills', householdId, year],
+    queryKey: ['dashboard-year-bills', selectedWorkspaceIds.join(','), year],
     queryFn: async () => {
       const results = await Promise.all(
-        billsWorkspaceIds.map(id => getBillRecordsForYear(supabase, id, householdId, year))
+        selectedWorkspaceIds.map(id => getBillRecordsForYear(supabase, id, year))
       )
       return results.flat()
     },
-    enabled: viewMode === 'year' && billsWorkspaceIds.length > 0,
+    enabled: viewMode === 'year' && selectedWorkspaceIds.length > 0,
   })
 
   const { data: yearIncomeEntries = [] } = useQuery({
-    queryKey: ['dashboard-year-income', householdId, year],
+    queryKey: ['dashboard-year-income', selectedWorkspaceIds.join(','), year],
     queryFn: async () => {
-      const results = await Promise.all(incomeWorkspaceIds.map(id => getAllIncomeEntries(supabase, id)))
+      const results = await Promise.all(selectedWorkspaceIds.map(id => getAllIncomeEntries(supabase, id)))
       return results.flat().filter(e => e.monthKey.startsWith(`${year}-`))
     },
-    enabled: viewMode === 'year' && incomeWorkspaceIds.length > 0,
+    enabled: viewMode === 'year' && selectedWorkspaceIds.length > 0,
   })
 
   const { data: allTransactions = [] } = useQuery({
-    queryKey: ['dashboard-year-transactions', householdId, year],
+    queryKey: ['dashboard-year-transactions', selectedWorkspaceIds.join(','), year],
     queryFn: async () => {
-      const results = await Promise.all(investmentWorkspaceIds.map(id => getTransactionsByWorkspace(supabase, id)))
+      const results = await Promise.all(selectedWorkspaceIds.map(id => getTransactionsByHousehold(supabase, id)))
       return results.flat()
     },
-    enabled: viewMode === 'year' && investmentWorkspaceIds.length > 0,
+    enabled: viewMode === 'year' && selectedWorkspaceIds.length > 0,
   })
 
   const { data: goals = [] } = useQuery({
     queryKey: ['goals', householdId],
-    queryFn: () => getGoals(supabase, householdId),
-    enabled: viewMode === 'year',
+    queryFn: () => getGoals(supabase, householdId!),
+    enabled: viewMode === 'year' && !!householdId,
   })
-
-  // ── Month mode computed values ────────────────────────────
 
   const totalExpenses = allEntries.reduce((s, e) => s + e.valueCents, 0)
   const paidExpenses = allEntries.filter(e => e.status === 'paid').reduce((s, e) => s + e.valueCents, 0)
@@ -165,15 +165,13 @@ export function DashboardClient({ householdId }: Props) {
 
   return (
     <div className="p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+      <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <LayoutDashboard size={22} className="text-gray-500" />
           <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* View mode toggle */}
           <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
             <button
               onClick={() => setViewMode('month')}
@@ -189,7 +187,6 @@ export function DashboardClient({ householdId }: Props) {
             </button>
           </div>
 
-          {/* Month / Year navigator */}
           {viewMode === 'month' ? (
             <div className="flex items-center gap-1">
               <button onClick={() => setMonthKey(getPrevMonthKey(monthKey))} className="p-1.5 rounded-lg hover:bg-gray-100">
@@ -214,7 +211,27 @@ export function DashboardClient({ householdId }: Props) {
         </div>
       </div>
 
-      {/* Year mode */}
+      {/* Multi-workspace filter — only shown when user has 2+ workspaces */}
+      {workspaces.length > 1 && (
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
+          <span className="text-xs font-medium text-gray-500">Workspaces:</span>
+          {workspaces.map(ws => {
+            const active = selectedIds === null || (selectedIds ?? allIds).includes(ws.id)
+            return (
+              <label key={ws.id} className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={active}
+                  onChange={() => toggleWorkspace(ws.id)}
+                  className="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="text-xs text-gray-700">{ws.name}</span>
+              </label>
+            )
+          })}
+        </div>
+      )}
+
       {viewMode === 'year' && (
         <YearView
           year={year}
@@ -228,7 +245,6 @@ export function DashboardClient({ householdId }: Props) {
         />
       )}
 
-      {/* Month mode */}
       {viewMode === 'month' && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -277,7 +293,7 @@ export function DashboardClient({ householdId }: Props) {
                 <span className="text-xs text-gray-400">{pendingBills.length} pendentes</span>
               </div>
               {pendingBills.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">Tudo em dia 🎉</p>
+                <p className="text-sm text-gray-400 text-center py-4">Tudo em dia</p>
               ) : (
                 <div className="divide-y divide-gray-50">
                   {pendingBills.map(entry => (

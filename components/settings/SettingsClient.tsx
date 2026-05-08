@@ -4,13 +4,14 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useUIStore } from '@/stores/useUIStore'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import {
-  getCategories, getWorkspaces, createWorkspace, updateWorkspace, deleteWorkspace,
+  getCategories,
   createCategory, updateCategory, deleteCategory,
-  getHouseholdMembers, removeMember, joinHousehold,
+  getHouseholdMembers, removeMember,
 } from '@/lib/supabase/queries/settings'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2, Plus, Settings, LogOut, RefreshCw, Book, Users, Copy, Check, Pencil, X } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Trash2, Plus, Settings, LogOut, Book, Users, Copy, Check, Pencil, X } from 'lucide-react'
 import Image from 'next/image'
 import { WORKSPACE_COLORS } from '@/lib/constants'
 import { ReleaseNotes } from './ReleaseNotes'
@@ -18,66 +19,44 @@ import { ReleaseNotes } from './ReleaseNotes'
 const CONFIRMATION_PHRASE = 'apagar todos os dados do financialfriend'
 
 interface Props {
-  householdId: string
-  householdName: string
   userId: string
 }
 
-export function SettingsClient({ householdId, householdName, userId }: Props) {
+export function SettingsClient({ userId }: Props) {
   const router = useRouter()
   const supabase = createClient()
   const queryClient = useQueryClient()
   const { addNotification } = useUIStore()
+  const { activeWorkspace } = useWorkspaceStore()
+  const householdId = activeWorkspace?.id ?? null
 
   const [resetInput, setResetInput] = useState('')
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [resetting, setResetting] = useState(false)
   const [showReleaseNotes, setShowReleaseNotes] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [joinCode, setJoinCode] = useState('')
-  const [joining, setJoining] = useState(false)
-  const [joinError, setJoinError] = useState<string | null>(null)
 
   const { data: members = [] } = useQuery({
     queryKey: ['household-members', householdId],
-    queryFn: () => getHouseholdMembers(supabase, householdId),
+    queryFn: () => getHouseholdMembers(supabase, householdId!),
+    enabled: !!householdId,
   })
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories', householdId],
-    queryFn: () => getCategories(supabase, householdId),
-  })
-
-  const { data: workspaces = [] } = useQuery({
-    queryKey: ['workspaces', householdId],
-    queryFn: () => getWorkspaces(supabase, householdId),
+    queryFn: () => getCategories(supabase, householdId!),
+    enabled: !!householdId,
   })
 
   async function handleCopyCode() {
+    if (!householdId) return
     await navigator.clipboard.writeText(householdId)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
-  async function handleJoin(e: React.FormEvent) {
-    e.preventDefault()
-    setJoinError(null)
-    setJoining(true)
-    try {
-      const result = await joinHousehold(supabase, userId, joinCode.trim())
-      if (result.success) {
-        addNotification('Você entrou no espaço! Recarregue a página.', 'success')
-        setJoinCode('')
-        queryClient.invalidateQueries({ queryKey: ['household-members', householdId] })
-      } else {
-        setJoinError(result.error ?? 'Erro ao entrar no espaço')
-      }
-    } finally {
-      setJoining(false)
-    }
-  }
-
   async function handleRemoveMember(uid: string) {
+    if (!householdId) return
     await removeMember(supabase, householdId, uid)
     queryClient.invalidateQueries({ queryKey: ['household-members', householdId] })
     addNotification('Membro removido', 'success')
@@ -125,70 +104,48 @@ export function SettingsClient({ householdId, householdName, userId }: Props) {
         <h1 className="text-xl font-semibold text-gray-900">Configurações</h1>
       </div>
 
-      {/* Household info */}
-      <Section title="Espaço Financeiro" icon={<Users size={16} className="text-gray-400" />}>
+      {/* Workspace info */}
+      <Section title="Workspace Ativo" icon={<Users size={16} className="text-gray-400" />}>
         <p className="text-sm text-gray-600 mb-3">
-          Espaço: <span className="font-medium text-gray-900">{householdName}</span>
+          Workspace: <span className="font-medium text-gray-900">{activeWorkspace?.name ?? '—'}</span>
         </p>
 
-        {/* Members list */}
-        <div className="mb-4">
-          <p className="text-xs font-medium text-gray-500 mb-2">Membros ({members.length})</p>
-          <div className="space-y-2">
-            {members.map(m => (
-              <div key={m.userId} className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">{m.fullName ?? 'Usuário'}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400 capitalize">{m.role}</span>
-                  {m.userId !== userId && m.role !== 'owner' && (
-                    <button onClick={() => handleRemoveMember(m.userId)} className="text-gray-300 hover:text-red-500 transition-colors">
-                      <Trash2 size={13} />
-                    </button>
-                  )}
-                </div>
+        {householdId && (
+          <>
+            <div className="mb-4">
+              <p className="text-xs font-medium text-gray-500 mb-2">Membros ({members.length})</p>
+              <div className="space-y-2">
+                {members.map(m => (
+                  <div key={m.userId} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-700">{m.fullName ?? 'Usuário'}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400 capitalize">{m.role}</span>
+                      {m.userId !== userId && m.role !== 'owner' && (
+                        <button onClick={() => handleRemoveMember(m.userId)} className="text-gray-300 hover:text-red-500 transition-colors">
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Invite code */}
-        <div className="border-t border-gray-100 pt-4">
-          <p className="text-xs font-medium text-gray-500 mb-2">Código de convite</p>
-          <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
-            <code className="text-xs text-gray-600 flex-1 truncate">{householdId}</code>
-            <button
-              onClick={handleCopyCode}
-              className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 shrink-0"
-            >
-              {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
-              {copied ? 'Copiado!' : 'Copiar'}
-            </button>
-          </div>
-          <p className="text-xs text-gray-400 mt-1">
-            Compartilhe este código para que outra pessoa entre no seu espaço.
-          </p>
-        </div>
-
-        {/* Join another household */}
-        <div className="border-t border-gray-100 pt-4 mt-4">
-          <p className="text-xs font-medium text-gray-500 mb-2">Entrar em outro espaço</p>
-          <form onSubmit={handleJoin} className="flex gap-2">
-            <input
-              value={joinCode}
-              onChange={e => { setJoinCode(e.target.value); setJoinError(null) }}
-              placeholder="Cole o código do espaço aqui"
-              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            />
-            <button
-              type="submit"
-              disabled={!joinCode.trim() || joining}
-              className="text-sm bg-primary-600 text-white rounded-lg px-3 py-2 hover:bg-primary-700 disabled:opacity-50 transition-colors"
-            >
-              {joining ? '...' : 'Entrar'}
-            </button>
-          </form>
-          {joinError && <p className="text-xs text-red-600 mt-1">{joinError}</p>}
-        </div>
+            <div className="border-t border-gray-100 pt-4">
+              <p className="text-xs font-medium text-gray-500 mb-2">ID do workspace</p>
+              <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                <code className="text-xs text-gray-600 flex-1 truncate">{householdId}</code>
+                <button
+                  onClick={handleCopyCode}
+                  className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 shrink-0"
+                >
+                  {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                  {copied ? 'Copiado!' : 'Copiar'}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </Section>
 
       {/* Novidades */}
@@ -202,15 +159,12 @@ export function SettingsClient({ householdId, householdName, userId }: Props) {
         {showReleaseNotes && <ReleaseNotes onClose={() => setShowReleaseNotes(false)} />}
       </Section>
 
-      {/* Workspaces */}
-      <Section title="Workspaces">
-        <WorkspaceManager householdId={householdId} workspaces={workspaces} />
-      </Section>
-
       {/* Categories */}
-      <Section title="Categorias">
-        <CategoryManager householdId={householdId} categories={categories} />
-      </Section>
+      {householdId && (
+        <Section title="Categorias">
+          <CategoryManager householdId={householdId} categories={categories} />
+        </Section>
+      )}
 
       {/* Logout */}
       <Section title="Conta">
@@ -312,136 +266,6 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
           style={{ backgroundColor: c }}
         />
       ))}
-    </div>
-  )
-}
-
-function WorkspaceManager({ householdId, workspaces }: { householdId: string; workspaces: ReturnType<typeof getWorkspaces> extends Promise<infer T> ? T : never }) {
-  const supabase = createClient()
-  const queryClient = useQueryClient()
-  const { addNotification } = useUIStore()
-  const [adding, setAdding] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newType, setNewType] = useState<'bills' | 'investments' | 'fgts' | 'income'>('bills')
-  const [newColor, setNewColor] = useState(WORKSPACE_COLORS[0])
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editName, setEditName] = useState('')
-  const [editColor, setEditColor] = useState('')
-
-  function startEdit(ws: { id: string; name: string; color: string }) {
-    setEditingId(ws.id); setEditName(ws.name); setEditColor(ws.color)
-  }
-
-  async function handleSave(id: string) {
-    await updateWorkspace(supabase, id, { name: editName.trim(), color: editColor })
-    queryClient.invalidateQueries({ queryKey: ['workspaces'] })
-    setEditingId(null)
-    addNotification('Workspace atualizado', 'success')
-  }
-
-  async function handleAdd(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newName.trim()) return
-    await createWorkspace(supabase, {
-      household_id: householdId,
-      name: newName.trim(),
-      type: newType,
-      color: newColor,
-      sort_order: workspaces.length,
-    })
-    queryClient.invalidateQueries({ queryKey: ['workspaces'] })
-    setNewName('')
-    setAdding(false)
-    addNotification('Workspace criado', 'success')
-  }
-
-  async function handleDelete(id: string) {
-    await deleteWorkspace(supabase, id)
-    queryClient.invalidateQueries({ queryKey: ['workspaces'] })
-    addNotification('Workspace removido', 'success')
-  }
-
-  const typeLabels: Record<string, string> = { bills: 'Contas', investments: 'Investimentos', fgts: 'FGTS', income: 'Receitas' }
-
-  return (
-    <div className="space-y-2">
-      {workspaces.map(ws => (
-        editingId === ws.id ? (
-          <div key={ws.id} className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-3 space-y-2">
-            <input
-              autoFocus
-              value={editName}
-              onChange={e => setEditName(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            <ColorPicker value={editColor} onChange={setEditColor} />
-            <div className="flex gap-2">
-              <button onClick={() => handleSave(ws.id)} className="flex items-center gap-1 text-xs bg-primary-600 text-white rounded-lg px-3 py-1.5 hover:bg-primary-700">
-                <Check size={12} /> Salvar
-              </button>
-              <button onClick={() => setEditingId(null)} className="flex items-center gap-1 text-xs text-gray-500 px-2">
-                <X size={12} /> Cancelar
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div key={ws.id} className="flex items-center gap-3 rounded-lg bg-gray-50 px-3 py-2 group">
-            <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: ws.color }} />
-            <span className="flex-1 text-sm text-gray-800">{ws.name}</span>
-            <span className="text-xs text-gray-400">{typeLabels[ws.type]}</span>
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => startEdit(ws)} className="text-gray-400 hover:text-primary-600 transition-colors">
-                <Pencil size={13} />
-              </button>
-              <button onClick={() => handleDelete(ws.id)} className="text-gray-400 hover:text-red-500 transition-colors">
-                <Trash2 size={13} />
-              </button>
-            </div>
-          </div>
-        )
-      ))}
-
-      {adding ? (
-        <form onSubmit={handleAdd} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 space-y-2 mt-2">
-          <div className="flex gap-2">
-            <input
-              autoFocus
-              type="text"
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              placeholder="Nome do workspace"
-              className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            <select
-              value={newType}
-              onChange={e => setNewType(e.target.value as typeof newType)}
-              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-            >
-              <option value="bills">Contas</option>
-              <option value="investments">Investimentos</option>
-              <option value="fgts">FGTS</option>
-              <option value="income">Receitas</option>
-            </select>
-          </div>
-          <ColorPicker value={newColor} onChange={setNewColor} />
-          <div className="flex gap-2">
-            <button type="submit" className="text-sm bg-primary-600 text-white rounded-lg px-3 py-1.5 hover:bg-primary-700 transition-colors">
-              Criar
-            </button>
-            <button type="button" onClick={() => setAdding(false)} className="text-sm text-gray-500 hover:text-gray-700 px-2">
-              ✕
-            </button>
-          </div>
-        </form>
-      ) : (
-        <button
-          onClick={() => setAdding(true)}
-          className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mt-2"
-        >
-          <Plus size={14} />
-          Adicionar workspace
-        </button>
-      )}
     </div>
   )
 }
