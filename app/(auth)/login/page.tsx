@@ -37,7 +37,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
           <div className="flex justify-center mb-10">
-            <FinancialFriendLogo size={100} showText={false} />
+            <FinancialFriendLogo size={160} showText={false} />
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">

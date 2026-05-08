@@ -38,8 +38,8 @@ export function Sidebar({ userId }: Props) {
       }`}
     >
       {/* Logo */}
-      <div className="flex items-center justify-center h-16 border-b border-gray-100">
-        <FinancialFriendLogo size={44} showText={false} />
+      <div className="flex items-center justify-center py-5 border-b border-gray-100">
+        <FinancialFriendLogo size={sidebarCollapsed ? 36 : 72} showText={false} />
       </div>
 
       {/* Nav */}
