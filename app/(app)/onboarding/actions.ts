@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 const DEFAULT_CATEGORIES = [
   { name: 'Moradia', color: '#6366f1', type: 'bill' as const, sort_order: 0 },
@@ -18,35 +18,53 @@ const DEFAULT_CATEGORIES = [
 ]
 
 export async function createHouseholdAction(name: string): Promise<{ error: string | null }> {
-  const supabase = await createClient()
+  // Step 1: verify identity via the auth API (network call, always reliable)
+  const authClient = await createClient()
+  const { data: { user }, error: userError } = await authClient.auth.getUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  console.log('[createHouseholdAction] user:', user?.id ?? null, 'userError:', userError?.message ?? null)
+
   if (!user) return { error: 'not_authenticated' }
 
-  const { data: household, error: householdError } = await supabase
+  // Step 2: use the service-role client for all DB writes.
+  // Server Actions run exclusively on the server, so using the service role key
+  // here is safe. The user identity has already been verified above via getUser().
+  // We do this because the new sb_publishable_* key is not a JWT and PostgREST
+  // cannot decode it to evaluate RLS policies.
+  const db = createServiceClient()
+
+  const { data: household, error: householdError } = await db
     .from('households')
     .insert({ name: name || 'Meu Espaço Financeiro', created_by: user.id })
     .select()
     .single()
 
   if (householdError || !household) {
-    console.error('[createHousehold] error:', householdError)
+    console.error('[createHouseholdAction] households insert error:', householdError)
     return { error: householdError?.message ?? 'insert_failed' }
   }
 
-  await supabase.from('household_members').insert({
+  const { error: memberError } = await db.from('household_members').insert({
     household_id: household.id,
     user_id: user.id,
     role: 'owner',
   })
 
-  await supabase.from('categories').insert(
+  if (memberError) {
+    console.error('[createHouseholdAction] household_members insert error:', memberError)
+  }
+
+  const { error: catError } = await db.from('categories').insert(
     DEFAULT_CATEGORIES.map(c => ({
       ...c,
       household_id: household.id,
       is_default: true,
     }))
   )
+
+  if (catError) {
+    console.error('[createHouseholdAction] categories insert error:', catError)
+  }
 
   return { error: null }
 }
