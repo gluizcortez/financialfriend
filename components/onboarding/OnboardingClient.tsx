@@ -44,6 +44,7 @@ export function OnboardingClient({ userId, userEmail }: Props) {
       .single()
 
     if (householdError || !household) {
+      console.error('[onboarding] households insert error:', householdError)
       setError('Erro ao criar espaço financeiro. Tente novamente.')
       setLoading(false)
       return
