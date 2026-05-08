@@ -12,5 +12,5 @@ export default async function OnboardingPage() {
   const household = await getUserHousehold(supabase, user.id)
   if (household) redirect('/dashboard')
 
-  return <OnboardingClient userId={user.id} userEmail={user.email ?? ''} />
+  return <OnboardingClient userEmail={user.email ?? ''} />
 }

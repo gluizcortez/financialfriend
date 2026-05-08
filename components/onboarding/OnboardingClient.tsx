@@ -2,32 +2,15 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { FinancialFriendLogo } from '@/components/logo/FinancialFriendLogo'
-
-const DEFAULT_CATEGORIES = [
-  { name: 'Moradia', color: '#6366f1', type: 'bill' as const, sort_order: 0 },
-  { name: 'Transporte', color: '#3b82f6', type: 'bill' as const, sort_order: 1 },
-  { name: 'Alimentação', color: '#10b981', type: 'bill' as const, sort_order: 2 },
-  { name: 'Saúde', color: '#ef4444', type: 'bill' as const, sort_order: 3 },
-  { name: 'Educação', color: '#f59e0b', type: 'bill' as const, sort_order: 4 },
-  { name: 'Lazer', color: '#ec4899', type: 'bill' as const, sort_order: 5 },
-  { name: 'Serviços', color: '#8b5cf6', type: 'bill' as const, sort_order: 6 },
-  { name: 'Seguros', color: '#06b6d4', type: 'bill' as const, sort_order: 7 },
-  { name: 'Outros', color: '#6b7280', type: 'both' as const, sort_order: 8 },
-  { name: 'Renda Fixa', color: '#059669', type: 'investment' as const, sort_order: 9 },
-  { name: 'Renda Variável', color: '#d97706', type: 'investment' as const, sort_order: 10 },
-  { name: 'Criptomoedas', color: '#f97316', type: 'investment' as const, sort_order: 11 },
-]
+import { createHouseholdAction } from '@/app/(app)/onboarding/actions'
 
 interface Props {
-  userId: string
   userEmail: string
 }
 
-export function OnboardingClient({ userId, userEmail }: Props) {
+export function OnboardingClient({ userEmail }: Props) {
   const router = useRouter()
-  const supabase = createClient()
   const [householdName, setHouseholdName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -37,32 +20,14 @@ export function OnboardingClient({ userId, userEmail }: Props) {
     setLoading(true)
     setError(null)
 
-    const { data: household, error: householdError } = await supabase
-      .from('households')
-      .insert({ name: householdName || `Meu Espaço Financeiro`, created_by: userId })
-      .select()
-      .single()
+    const { error } = await createHouseholdAction(householdName)
 
-    if (householdError || !household) {
-      console.error('[onboarding] households insert error:', householdError)
+    if (error) {
+      console.error('[onboarding] createHouseholdAction error:', error)
       setError('Erro ao criar espaço financeiro. Tente novamente.')
       setLoading(false)
       return
     }
-
-    await supabase.from('household_members').insert({
-      household_id: household.id,
-      user_id: userId,
-      role: 'owner',
-    })
-
-    await supabase.from('categories').insert(
-      DEFAULT_CATEGORIES.map(c => ({
-        ...c,
-        household_id: household.id,
-        is_default: true,
-      }))
-    )
 
     router.push('/dashboard')
     router.refresh()
