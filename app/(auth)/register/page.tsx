@@ -13,7 +13,6 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [householdName, setHouseholdName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pendingConfirmation, setPendingConfirmation] = useState(false)
@@ -51,28 +50,8 @@ export default function RegisterPage() {
       return
     }
 
-    // Session available = email confirmation disabled, create household immediately
-    const { data: household, error: householdError } = await supabase
-      .from('households')
-      .insert({ name: householdName || `Casa de ${fullName}`, created_by: data.user.id })
-      .select()
-      .single()
-
-    if (householdError || !household) {
-      setError('Erro ao criar espaço financeiro. Contate o suporte.')
-      setLoading(false)
-      return
-    }
-
-    await supabase.from('household_members').insert({
-      household_id: household.id,
-      user_id: data.user.id,
-      role: 'owner',
-    })
-
-    await seedDefaultCategories(supabase, household.id)
-
-    router.push('/dashboard')
+    // Session available = email confirmation disabled, go to onboarding
+    router.push('/onboarding')
     router.refresh()
   }
 
@@ -137,22 +116,6 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nome do seu espaço financeiro
-              </label>
-              <input
-                type="text"
-                value={householdName}
-                onChange={e => setHouseholdName(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Ex: Casa Gabriel & Carol"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Você pode convidar outras pessoas para este espaço depois.
-              </p>
-            </div>
-
             {error && (
               <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
                 {error}
@@ -182,30 +145,3 @@ export default function RegisterPage() {
   )
 }
 
-async function seedDefaultCategories(
-  supabase: ReturnType<typeof createClient>,
-  householdId: string
-) {
-  const DEFAULT_CATEGORIES = [
-    { name: 'Moradia', color: '#6366f1', type: 'bill' as const, sort_order: 0 },
-    { name: 'Transporte', color: '#3b82f6', type: 'bill' as const, sort_order: 1 },
-    { name: 'Alimentação', color: '#10b981', type: 'bill' as const, sort_order: 2 },
-    { name: 'Saúde', color: '#ef4444', type: 'bill' as const, sort_order: 3 },
-    { name: 'Educação', color: '#f59e0b', type: 'bill' as const, sort_order: 4 },
-    { name: 'Lazer', color: '#ec4899', type: 'bill' as const, sort_order: 5 },
-    { name: 'Serviços', color: '#8b5cf6', type: 'bill' as const, sort_order: 6 },
-    { name: 'Seguros', color: '#06b6d4', type: 'bill' as const, sort_order: 7 },
-    { name: 'Outros', color: '#6b7280', type: 'both' as const, sort_order: 8 },
-    { name: 'Renda Fixa', color: '#059669', type: 'investment' as const, sort_order: 9 },
-    { name: 'Renda Variável', color: '#d97706', type: 'investment' as const, sort_order: 10 },
-    { name: 'Criptomoedas', color: '#f97316', type: 'investment' as const, sort_order: 11 },
-  ]
-
-  await supabase.from('categories').insert(
-    DEFAULT_CATEGORIES.map(c => ({
-      ...c,
-      household_id: householdId,
-      is_default: true,
-    }))
-  )
-}
